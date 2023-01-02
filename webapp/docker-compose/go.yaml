@@ -2,6 +2,7 @@ version: "3"
 services:
   mysql:
     image: mysql:5.7
+    platform: linux/amd64
     volumes:
       - ../mysql/data:/var/lib/mysql
       - ../mysql/db:/docker-entrypoint-initdb.d
@@ -47,10 +48,10 @@ services:
   nginx:
     build: ../nginx
     volumes:
-        - ../../provisioning/ansible/roles/web-bootstrap/files/nginx.conf.template:/etc/nginx/nginx.conf.template
-        - ../logs/nginx:/var/log/nginx
-        - ../nginx/conf.d:/etc/nginx/conf.d
-        - ../nginx/out:/www/data
+      - ../../provisioning/ansible/roles/web-bootstrap/files/nginx.conf.template:/etc/nginx/nginx.conf.template
+      - ../logs/nginx:/var/log/nginx
+      - ../nginx/conf.d:/etc/nginx/conf.d
+      - ../nginx/out:/www/data
     ports:
       - "8080:80"
     entrypoint:
