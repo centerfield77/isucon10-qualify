@@ -111,54 +111,39 @@ export const NazzoteMap: FC<Props> = ({ center, zoom, ...props }) => {
     setMode((mode) => (mode === 'drag' ? 'nazotte' : 'drag'))
   }, [])
 
-  const computeDegree = useCallback((x1: number, y1: number, x2: number, y2: number) => {
-    const abs1 = Math.sqrt(x1 * x1 + y1 * y1)
-    const abs2 = Math.sqrt(x2 * x2 + y2 * y2)
-    let theta = Math.acos((x1 * x2 + y1 * y2) / (abs1 * abs2)) // 内積を使って角度を計算
-    const sign = Math.sign(x1 * y2 - y1 * x2) // 外積を使って符号を計算
-    theta *= sign
-    return theta
-  }, [])
+  const isLeft = (p0: Vertex, p1: Vertex, p2: Vertex) => {
+    const res = (p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1])
+    return res
+  }
 
-  const isInsideByWindingNumberAlgorighm = useCallback(
-    (point: Vertex, polygon: Vertex[]) => {
-      const x = point[0]
-      const y = point[1]
+  // ref: https://gist.github.com/vlasky/d0d1d97af30af3191fc214beaf379acc
+  const pointInPolygon = (point: Vertex, polygon: Vertex[]): boolean => {
+    const x = point[0]
+    const y = point[1]
+    let windingNumber = 0
 
-      let thetaSum = 0
-      const n = polygon.length
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i][0]
+      const yi = polygon[i][1]
+      const xj = polygon[j][0]
+      const yj = polygon[j][1]
 
-      // i-1 => 指定された点 =>  i の成す角度の和をthetaSumに足し込んでいく
-      for (let i = 1; i < n; i++) {
-        if (polygon[i][0] === x && polygon[i][1] === y) {
-          // 指定された点が多角形の角の場合うまく角度が計算できないので、判明した時点でtrueを返す
-          return true
+      if (yj <= y) {
+        if (yi > y) {
+          if (isLeft([xj, yj], [xi, yi], [x, y]) > 0) {
+            windingNumber++
+          }
         }
-        const v1x = polygon[i - 1][0] - x
-        const v1y = polygon[i - 1][1] - y
-        const v2x = polygon[i][0] - x
-        const v2y = polygon[i][1] - y
-        thetaSum += computeDegree(v1x, v1y, v2x, v2y)
+      } else {
+        if (yi <= y) {
+          if (isLeft([xj, yj], [xi, yi], [x, y]) < 0) {
+            windingNumber--
+          }
+        }
       }
-      // 0とN番目の成す角度
-      if (polygon[0][0] === x && polygon[0][1] === y) {
-        return true
-      }
-      const v1x = polygon[n - 1][0] - x
-      const v1y = polygon[n - 1][1] - y
-      const v2x = polygon[0][0] - x
-      const v2y = polygon[0][1] - y
-      thetaSum += computeDegree(v1x, v1y, v2x, v2y)
-      thetaSum = Math.abs(thetaSum)
-
-      console.log(thetaSum)
-      if (thetaSum >= 0.1) {
-        return true
-      }
-      return false
-    },
-    [computeDegree]
-  )
+    }
+    return windingNumber !== 0
+  }
 
   return (
     <>
@@ -178,10 +163,7 @@ export const NazzoteMap: FC<Props> = ({ center, zoom, ...props }) => {
         />
 
         {resultEstates.map((estate, i) => {
-          const isInside = isInsideByWindingNumberAlgorighm(
-            [estate.latitude, estate.longitude],
-            vertexes
-          )
+          const isInside = pointInPolygon([estate.latitude, estate.longitude], vertexes)
           return isInside ? <EstateMarker key={i} estate={estate} /> : null
           // return <EstateMarker key={i} estate={estate} />
         })}
