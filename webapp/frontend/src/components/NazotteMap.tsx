@@ -56,50 +56,58 @@ export const NazzoteMap: FC<Props> = ({ center, zoom, ...props }) => {
   const [isDragging, setDragging] = useState<boolean>(false)
   const [resultEstates, setResultEstates] = useState<Estate[]>([])
 
-  const onNazotteStart = useCallback<LeafletEventCallback>(({ latlng }) => {
-    if (mode !== 'nazotte') return
-    setVertexes(() => [[latlng.lat, latlng.lng]])
-    setDragging(true)
-    setResultEstates(() => [])
-  }, [mode])
+  const onNazotteStart = useCallback<LeafletEventCallback>(
+    ({ latlng }) => {
+      if (mode !== 'nazotte') return
+      setVertexes(() => [[latlng.lat, latlng.lng]])
+      setDragging(true)
+      setResultEstates(() => [])
+    },
+    [mode]
+  )
 
-  const onNazotte = useCallback<LeafletEventCallback>(({ latlng }) => {
-    if (mode !== 'nazotte' || !isDragging) return
-    setVertexes(vertexes => [...vertexes, [latlng.lat, latlng.lng]])
-  }, [mode, isDragging])
+  const onNazotte = useCallback<LeafletEventCallback>(
+    ({ latlng }) => {
+      if (mode !== 'nazotte' || !isDragging) return
+      setVertexes((vertexes) => [...vertexes, [latlng.lat, latlng.lng]])
+    },
+    [mode, isDragging]
+  )
 
-  const onNazotteEnd = useCallback<LeafletEventCallback>(({ latlng }) => {
-    if (mode !== 'nazotte') return
-    const figuresIndexes = convexhull([...vertexes, [latlng.lat, latlng.lng]])
-    const figures = [
-      ...figuresIndexes.map(index => vertexes[index]),
-      vertexes[figuresIndexes[0]]
-    ].filter(vertex => vertex)
+  const onNazotteEnd = useCallback<LeafletEventCallback>(
+    ({ latlng }) => {
+      if (mode !== 'nazotte') return
+      const figuresIndexes = convexhull([...vertexes, [latlng.lat, latlng.lng]])
+      const figures = [
+        ...figuresIndexes.map((index) => vertexes[index]),
+        vertexes[figuresIndexes[0]]
+      ].filter((vertex) => vertex)
 
-    setVertexes(figures)
-    setDragging(false)
+      setDragging(false)
 
-    fetch('/api/estate/nazotte', {
-      method: 'POST',
-      mode: 'cors',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        coordinates: figures.map(([latitude, longitude]) => ({ latitude, longitude }))
+      fetch('/api/estate/nazotte', {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          coordinates: figures.map(([latitude, longitude]) => ({ latitude, longitude }))
+        })
       })
-    })
-      .then(async response => await response.json())
-      .then(({ estates }) => {
-        setResultEstates(estates as Estate[])
-        setMode('drag')
-      })
-      .catch(console.error)
-  }, [mode, vertexes])
+        .then(async (response) => await response.json())
+        .then(({ estates }) => {
+          setResultEstates(estates as Estate[])
+          setMode('drag')
+        })
+        .catch(console.error)
+    },
+    [mode, vertexes]
+  )
 
   const onFabClick = useCallback(() => {
-    setMode(mode => mode === 'drag' ? 'nazotte' : 'drag')
+    setMode((mode) => (mode === 'drag' ? 'nazotte' : 'drag'))
   }, [])
 
   return (
@@ -114,22 +122,19 @@ export const NazzoteMap: FC<Props> = ({ center, zoom, ...props }) => {
         dragging={mode === 'drag'}
       >
         <TileLayer
-          attribution='&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors'
-          url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           opacity={mode === 'nazotte' ? 0.5 : 1}
         />
 
-        {resultEstates.map((estate, i) => <EstateMarker key={i} estate={estate} />)}
+        {resultEstates.map((estate, i) => (
+          <EstateMarker key={i} estate={estate} />
+        ))}
 
-        {
-          vertexes.length > 0 && (
-            isDragging
-              ? <Polyline positions={vertexes} />
-              : <Polygon positions={vertexes} />
-          )
-        }
+        {vertexes.length > 0 &&
+          (isDragging ? <Polyline positions={vertexes} /> : <Polygon positions={vertexes} />)}
       </Map>
-      <Fab className={classes.fab} onClick={onFabClick} color='primary'>
+      <Fab className={classes.fab} onClick={onFabClick} color="primary">
         {mode === 'drag' ? <TouchAppIcon /> : <PanToolIcon />}
       </Fab>
     </>
