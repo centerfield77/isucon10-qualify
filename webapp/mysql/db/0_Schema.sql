@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS isuumo.chair;
 CREATE TABLE isuumo.estate
 (
     id          INTEGER             NOT NULL PRIMARY KEY,
+    room_id     VARCHAR(64)         NOT NULL,
     name        VARCHAR(64)         NOT NULL,
     description VARCHAR(4096)       NOT NULL,
     thumbnail   VARCHAR(128)        NOT NULL,

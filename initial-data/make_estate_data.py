@@ -115,10 +115,12 @@ def read_src_file_data(file_path):
     with open(file_path, mode='rb') as img:
         return img.read()
 
+roomIds = ['54b52fe1-bf0b-4986-96b0-39dd8232a85f','0037bf9f-cc61-4c06-a706-9ef10c7d4cb4','b1ad0158-d1f0-44f2-957c-07fd5b894180']
 
 def dump_estate_to_json_str(estate):
     return json.dumps({
         "id": estate["id"],
+        "room_id": random.choice(roomIds),
         "thumbnail": estate["thumbnail"],
         "name": estate["name"],
         "latitude": estate["latitude"],
@@ -140,6 +142,7 @@ def generate_estate_dummy_data(estate_id, wrap={}):
 
     estate = {
         "id": estate_id,
+        "room_id": random.choice(roomIds),
         "thumbnail": f'/images/estate/{image_hash}.png',
         "name": fake.word(ext_word_list=BUILDING_NAME_LIST).format(name=fake.last_name()),
         "latitude": float(latlng[0]) + random.normalvariate(mu=0.0, sigma=0.3),
@@ -178,7 +181,7 @@ if __name__ == '__main__':
             bulk_list = [generate_estate_dummy_data(
                 estate_id + i) for i in range(BULK_INSERT_COUNT)]
             estate_id += BULK_INSERT_COUNT
-            sqlCommand = f"""INSERT INTO isuumo.estate (id, thumbnail, name, latitude, longitude, address, rent, door_height, door_width, popularity, description, features) VALUES {', '.join(map(lambda estate: f"('{estate['id']}', '{estate['thumbnail']}', '{estate['name']}', '{estate['latitude']}' , '{estate['longitude']}', '{estate['address']}', '{estate['rent']}', '{estate['door_height']}', '{estate['door_width']}', '{estate['popularity']}', '{estate['description']}', '{estate['features']}')", bulk_list))};"""
+            sqlCommand = f"""INSERT INTO isuumo.estate (id, room_id, thumbnail, name, latitude, longitude, address, rent, door_height, door_width, popularity, description, features) VALUES {', '.join(map(lambda estate: f"('{estate['id']}', '{estate['room_id']}','{estate['thumbnail']}', '{estate['name']}', '{estate['latitude']}' , '{estate['longitude']}', '{estate['address']}', '{estate['rent']}', '{estate['door_height']}', '{estate['door_width']}', '{estate['popularity']}', '{estate['description']}', '{estate['features']}')", bulk_list))};"""
             sqlfile.write(sqlCommand)
             txtfile.write("\n".join([dump_estate_to_json_str(estate)
                                      for estate in bulk_list]) + "\n")
